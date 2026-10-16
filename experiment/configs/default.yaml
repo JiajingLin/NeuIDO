@@ -1,0 +1,137 @@
+overwrite: true
+resume: false
+local_dir: experiment/log
+gpu: 0
+scene_cfg_base: experiment/data/scene_cfg
+scene_name: RubberPawn
+
+loss:
+  pixel_loss: l2
+  decay_init: 0.5
+  decay_final: 1.0
+  lambda_max_decay: 0.33
+  decay_steps: 25
+
+  use_ssim: true
+  use_flow: false
+
+train:
+  phase_pretrain:
+    gpu: 0
+    save_name: phase_pretrain
+    dataset_dir: /path/to/your/PhyWorldModel
+    batch_size: 10000
+    lr: 1e-2
+    weight_decay: 1e-4
+    step_lr_step_size: 100
+    total_epochs: 10
+
+  phase_distill:
+    gpu: 0
+    save_name: phase_distill
+    dataset_info_path: /path/to/your/data_info.json
+    batch_size: 1
+    pretrained_trunk: /path/to/your/checkpoints/model_neuma.pth
+    pretrained_elasticity_latent: /path/to/your/checkpoints/motion_elasticity_latent_neuma.pth
+    pretrained_plasticity_latent: /path/to/your/checkpoints/motion_plasticity_latent_neuma.pth
+    total_epochs: 100
+    lr: 1e-2
+    step_lr_step_size: 100
+    frames_per_stage: 10
+    steps_per_frame: 5
+    save_dir: experiment/data/motion_latent
+
+  phase_unify:
+    gpu: 0
+    save_name: phase_unify
+    dataset_info_path: /path/to/your/data_info.json
+    batch_size: 3
+    pretrained_branch: /path/to/your/checkpoints/motion_encoder.pth
+    pretrained_trunk: /path/to/your/checkpoints/model.pth
+    total_epochs: 100
+    lr: 5e-5
+    step_lr_step_size: 30
+    frames_per_stage: 20
+    steps_per_frame: 5
+    final_branch: experiment/data/model/branch.pth
+    final_trunk: experiment/data/model/trunk.pth
+
+operator:
+  latent_dim: 128
+
+  trunck:
+    elasticity:
+        layer_widths:
+        - 64
+        - 64
+        norm: null
+        nonlinearity: gelu
+        no_bias: true
+        normalize_input: true
+
+    plasticity:
+        layer_widths:
+        - 64
+        - 64
+        norm: null
+        alpha: 0.001
+        nonlinearity: gelu
+        no_bias: true
+        normalize_input: true
+    lora:
+        r: 16
+        alpha: 16
+  
+  branch:
+    vae_latent_channels: 32
+    conv_mid_channels: 128
+    conv_layers: 2
+    attn_heads: 4
+    mlp_hidden: 256
+    dropout: 0.0
+
+    vae: 
+      target: operator_modules.branch_modules.vae.autoencoder.VideoAutoencoderInferenceWrapper
+      params:
+        cp_size: 1
+        ckpt_path: "/path/to/your/3d-vae.pt"
+        ignore_keys: [ 'loss' ]
+
+        loss_config:
+          target: torch.nn.Identity
+
+        regularizer_config:
+          target: operator_modules.branch_modules.vae.regularizers.DiagonalGaussianRegularizer
+
+        encoder_config:
+          target: operator_modules.branch_modules.vae.cp_enc_dec.ContextParallelEncoder3D
+          params:
+            double_z: true
+            z_channels: 16
+            resolution: 256
+            in_channels: 3
+            out_ch: 3
+            ch: 128
+            ch_mult: [ 1, 2, 2, 4 ]
+            attn_resolutions: [ ]
+            num_res_blocks: 3
+            dropout: 0.0
+            gather_norm: True
+
+        decoder_config:
+          target: operator_modules.branch_modules.vae.cp_enc_dec.ContextParallelDecoder3D
+          params:
+            double_z: True
+            z_channels: 16
+            resolution: 256
+            in_channels: 3
+            out_ch: 3
+            ch: 128
+            ch_mult: [ 1, 2, 2, 4 ]
+            attn_resolutions: [ ]
+            num_res_blocks: 3
+            dropout: 0.0
+            gather_norm: False
+      
+
+

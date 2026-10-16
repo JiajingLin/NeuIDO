@@ -1,0 +1,124 @@
+gaussians:
+  sh_degree: 3
+  opacity_thres: 0.02
+  kernels_path: /path/to/your/NeuMA-Synthetic/assets/sandfish/kernels.ply    # Replace this with the path to the reconstructed Gaussian kernels
+  scaling_modifier: 1.0
+
+physics:
+  sim:
+    substeps: 1
+    nframes: 400
+    skip_frames: 1
+
+    gravity:
+      - 0.0
+      - -9.8
+      - 0.0
+    bc: noslip
+    num_grids: 32
+    dt: 0.0005
+    bound: 1
+    eps: 6e-7
+
+
+particles:
+  shape:
+    pcd_name: sandfish/particles
+    asset_root: /path/to/your/NeuMA-Synthetic/assets
+    sort: null
+    ori_bounds:
+    - [0., 0., 0.]
+    - [1., 1., 1.]
+    sim_bounds:
+    - [0., 0., 0.]
+    - [1., 1., 1.]
+  rho: 1000.0
+  clip_bound: 0.1
+  mesh_path: /path/to/your/NeuMA-Synthetic/assets/sandfish/mesh.ply    # Replace this with the path to the reconstructed mesh
+  mesh_sample_mode: volumetric
+  mesh_sample_resolution: 60      # For sampling from the mesh, larger values will result in more particles
+
+dataset:
+  eval: false
+  camera_type: NeuMASynthetic
+  device: cuda:0
+  data:
+    path: /path/to/your/NeuMA-Synthetic/data/SandFish               # Replace this with the path to the dataset folder
+    transformsfile: data_dynamic.json
+    white_background: true
+    exclude_steps:
+    - -1
+    used_views: 
+    - d_0
+    # - d_1
+    - d_2
+    # - d_3
+    # - d_4
+    # - d_5
+    # - d_6
+    # - d_7
+    # - d_8
+    # - d_9
+    init_path:  /path/to/your/checkpoints/{scene_id}/init.pt
+    nframes: 400
+    skip_frames: 5
+    from_frame: 150
+    to_frame: 250
+    read_mask_only: false
+  camera:
+    resolution: 1
+    data_device: cuda:0
+
+align:
+    # warmup_step: 0
+
+    elasticity_scheduler:
+      type: cos
+      max_steps: 100
+      learning_rate_alpha: 0.01
+    # elasticity_lr: 0.008
+    elasticity_wd: 0.0
+    elasticity_grad_max_norm: 1.0
+    elasticity_latent_lr: 0.008
+
+    plasticity_scheduler:
+      type: cos
+      max_steps: 100
+      learning_rate_alpha: 0.01
+
+    plasticity_wd: 0.0
+    plasticity_grad_max_norm: 1.0
+    plasticity_latent_lr: 0.008
+
+    # decay_init: 0.5
+    # decay_final: 1.0
+    # decay_steps: 80
+    # lambda_max_decay: 0.33
+    # num_epochs: 100
+
+finetune:
+    warmup_step: 0
+
+    elasticity_scheduler:
+      type: cos
+      max_steps: 100
+      learning_rate_alpha: 0.04
+    elasticity_lr: 0.008
+    elasticity_wd: 0.0
+    elasticity_grad_max_norm: 1.0
+    elasticity_latent_lr: 0.008
+
+    plasticity_scheduler:
+      type: cos
+      max_steps: 100
+      learning_rate_alpha: 0.04
+    plasticity_lr: 0.0008
+    plasticity_wd: 0.0
+    plasticity_grad_max_norm: 1.0
+    plasticity_latent_lr: 0.0008
+  
+    decay_init: 0.5
+    decay_final: 1.0
+    decay_steps: 80
+    lambda_max_decay: 0.33
+    num_epochs: 100
